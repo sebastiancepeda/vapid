@@ -49,7 +49,7 @@ def _are_vps_outside(vp_lines, x_max, y_max):
     return vps_outside_image
 
 
-def draw_vps(image, vp_lines):
+def draw_vps(image, vp_lines, draw_lines):
     """
     Draws detected vanishing points and lines in an image
 
@@ -71,17 +71,27 @@ def draw_vps(image, vp_lines):
         vp_lines = _vp_lines_translation(dx, dy, vp_lines)
     image_shape = image.shape[0:2]
     for vp, lines in vp_lines:
-        for line in lines:
-            x1, y1, x2, y2 = segment_from_line_equation(line, image_shape)
-            p1 = (x1, y1)
-            p2 = (x2, y2)
-            cv2.line(image, p1, p2, GREEN_COLOR, line_size * 2)
-            cv2.line(image, p1, p2, RED_COLOR, line_size)
-        cv2.circle(image, vp, line_size * 10, BLUE_COLOR,
-                   line_size * 10)
-        cv2.circle(image, vp, line_size * 5, GREEN_COLOR,
-                   line_size * 5)
+        if draw_lines:
+            draw_vp_lines(image, image_shape, line_size, lines)
+        draw_vp(image, line_size, vp)
+        break
     return image
+
+
+def draw_vp(image, line_size, vp):
+    cv2.circle(image, vp, line_size * 10, BLUE_COLOR,
+               line_size * 10)
+    cv2.circle(image, vp, line_size * 5, GREEN_COLOR,
+               line_size * 5)
+
+
+def draw_vp_lines(image, image_shape, line_size, lines):
+    for line in lines:
+        x1, y1, x2, y2 = segment_from_line_equation(line, image_shape)
+        p1 = (x1, y1)
+        p2 = (x2, y2)
+        cv2.line(image, p1, p2, GREEN_COLOR, line_size * 2)
+        cv2.line(image, p1, p2, RED_COLOR, line_size)
 
 
 class VanishingPointsDetector:
@@ -134,7 +144,7 @@ class VanishingPointsDetector:
                                    maxLineGap=max_line_gap)
         if segments is None:
             segments = np.array([])
-        self.logger.info(f"Detected lines: {segments.shape[0]}")
+        # self.logger.info(f"Detected lines: {segments.shape[0]}")
         image_copy = image.copy()
         sf = SegmentFilter(distance_threshold_ratio=0.1)
         filtered_segments = sf.execute(segments, image_shape[0:2])
@@ -153,7 +163,7 @@ class VanishingPointsDetector:
 
     def _vps_detection(self, image_gray, image_shape, lines):
         vps, vp_lines_map = vps_from_lines(lines)
-        self.logger.info(f"Detected intersection points: {len(vps)}")
+        # self.logger.info(f"Detected intersection points: {len(vps)}")
         detected_image = cv2.cvtColor(image_gray, cv2.COLOR_GRAY2RGB)
         line_size = max(1, int(image_shape[0] * 0.001))
         for vp in vps:
@@ -168,7 +178,7 @@ class VanishingPointsDetector:
                                                     percentage_threshold=0.6)
         vp_lines = vp_filter.execute(image_shape[0:2], vps, vp_lines_map)
         vp_lines = list(vp_lines)
-        self.logger.info(f"Detected vanishing points: {len(vp_lines)}")
+        # self.logger.info(f"Detected vanishing points: {len(vp_lines)}")
         return vp_lines
 
     def execute(self, image):
