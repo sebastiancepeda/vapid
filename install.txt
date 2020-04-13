@@ -1,0 +1,7 @@
+
+* To install dependencies (with conda):
+    - conda env create --file environment.yml
+
+* To run:
+    - Put some images in ./input/
+    - run "./main.sh"
